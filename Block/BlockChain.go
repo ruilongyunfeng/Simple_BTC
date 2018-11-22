@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"os"
 	"strconv"
+	"time"
 )
 
 type BlockChain struct {
@@ -19,7 +20,6 @@ type BlockChain struct {
 
 const dbName = "blockchain_%s.db"
 
-// 表的名字
 const blockTableName = "blocks"
 
 func DBExists(dbName string) bool {
@@ -107,7 +107,6 @@ func (bc *BlockChain) AddBlockToBlockChain(txs []*Transaction) {
 				log.Panic(err)
 			}
 
-			//更新blockChain
 			bc.tip = newBlock.Hash
 		}
 		return nil
@@ -475,4 +474,138 @@ func (bc *BlockChain) VerifyTransaction(tx *Transaction, txs []*Transaction) boo
 	}
 
 	return tx.Verify(prevTxs)
+}
+
+
+func (bc *BlockChain) GetBalance(address string) int64{
+	utxos := bc.UnUTXOs(address,[]*Transaction{})
+
+	var amount int64
+
+	for _,utxo := range utxos {
+		amount = amount + utxo.output.value
+	}
+
+	return amount
+}
+
+func (bc *BlockChain) GetBestHeight() int64{
+	block := bc.Iterator().Next()
+
+	return block.Height
+}
+
+func (bc *BlockChain) GetBlockHahes() [][]byte  {
+	blockIterator := bc.Iterator()
+
+	var blockHashs [][]byte
+
+	for  {
+		block := blockIterator.Next()
+
+		blockHashs = append(blockHashs,block.Hash)
+
+		var hashInt big.Int
+		hashInt.SetBytes(block.PrevBlockHash)
+
+		if hashInt.Cmp(big.NewInt(0)) == 0 {
+			break
+		}
+	}
+
+	return blockHashs
+}
+
+func (bc *BlockChain) GetBlock(blockHash []byte)([]byte,error){
+	var blockBytes []byte
+
+	err := bc.DB.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(blockTableName))
+
+		if b != nil {
+			blockBytes = b.Get(blockHash)
+		}
+
+		return nil
+	})
+
+	return blockBytes,err
+}
+
+func (bc *BlockChain) AddBlock(block *Block){
+	err := bc.DB.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(blockTableName))
+
+		if b != nil {
+			blockExist := b.Get(block.Hash)
+
+			if blockExist != nil {
+				return nil
+			}
+
+			err := b.Put(block.Hash,block.Serialize())
+
+			if err != nil {
+				log.Panic(err)
+			}
+
+			blockHash := b.Get([]byte("tip"))
+
+			blockBytes := b.Get(blockHash)
+
+			blockInDB := DeSerializeBlock(blockBytes)
+
+			if blockInDB.Height < block.Height{
+				b.Put([]byte("tip"),block.Hash)
+				bc.tip = block.Hash
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		log.Panic(err)
+	}
+}
+
+func (bc *BlockChain) PrintChain()  {
+	fmt.Println("All BlockInfo:")
+
+	bcIterator := bc.Iterator()
+
+	for {
+		block := bcIterator.Next()
+
+		fmt.Printf("Height：%d\n", block.Height)
+		fmt.Printf("PrevBlockHash：%x\n", block.PrevBlockHash)
+		fmt.Printf("Timestamp：%s\n", time.Unix(block.Timestamp, 0).Format("2006-01-02 03:04:05 PM"))
+		fmt.Printf("Hash：%x\n", block.Hash)
+		fmt.Printf("Nonce：%d\n", block.Nonce)
+		fmt.Println("Txs:")
+
+		for _,tx := range block.Txs {
+			fmt.Printf("%x\n", tx.txHash)
+			fmt.Println("Vins:")
+
+			for _,in := range tx.vins{
+				fmt.Printf("%x\n", in.txHash)
+				fmt.Printf("%d\n", in.voutindex)
+				fmt.Printf("%x\n", in.publicKey)
+			}
+
+			fmt.Println("Vouts:")
+			for _,out := range tx.vouts{
+				fmt.Printf("%d\n",out.value)
+				fmt.Printf("%x\n",out.ripemd160Hash)
+			}
+		}
+
+		var hashInt big.Int
+		hashInt.SetBytes(block.PrevBlockHash)
+
+		if hashInt.Cmp(big.NewInt(0))== 0 {
+			break
+		}
+	}
 }
