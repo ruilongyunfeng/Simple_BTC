@@ -14,6 +14,6 @@ package Block
 var knowNodes = []string{"localhost:3000"}
 var nodeAddress string //全局变量，节点地址
 // 存储hash值
-var transactionArray [][]byte
+var hashCacheArray [][]byte
 var minerAddress string
 var memoryTxPool = make(map[string]*Transaction)

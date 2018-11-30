@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"encoding/json"
+	"fmt"
 	"golang.org/x/crypto/ripemd160"
 	"log"
 )
@@ -71,4 +72,17 @@ func JsonToStringArray(jsonStr string) []string {
 	}
 
 	return strArr
+}
+
+//字节数组转version
+func bytesToCommand(bytes []byte) string {
+	var command []byte
+
+	for _, b := range bytes {
+		if b != 0x0 {
+			command = append(command, b)
+		}
+	}
+
+	return fmt.Sprintf("%s", command)
 }
