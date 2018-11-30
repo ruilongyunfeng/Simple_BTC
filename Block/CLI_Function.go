@@ -1,6 +1,10 @@
 package Block
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"strconv"
+)
 
 /* *************************************************************
  * Copyright  2018 Bridge-ruijiezhi@163.com. All rights reserved.
@@ -64,7 +68,7 @@ func (cli *CLI) printChain(nodeID string) {
 func (cli *CLI) send(from []string, to []string, amount []string, nodeID string, mineNow bool) {
 	blockChain := BlockChainObject(nodeID)
 
-	utxoSet = &UTXOSet{blockChain}
+	utxoSet := &UTXOSet{blockChain}
 	defer blockChain.DB.Close()
 
 	if mineNow {
@@ -72,8 +76,31 @@ func (cli *CLI) send(from []string, to []string, amount []string, nodeID string,
 		utxoSet.Update()
 	} else {
 		value, _ := strconv.Atoi(amount[0])
-		tx := NewSimpleTransaction(from[0], to[0], value, utxoSet, []*Transaction{}, nodeID)
+		tx := NewSimpleTransaction(from[0], to[0], int64(value), utxoSet, []*Transaction{}, nodeID)
 
 		sendTx(knowNodes[0], tx)
 	}
+}
+
+func (cli *CLI) startNode(nodeID string, minerAdd string) {
+
+	if minerAdd == "" || IsValidForAdress([]byte(minerAdd)) {
+		fmt.Printf("start server : localhost:%s\n", nodeID)
+		startServer(nodeID, minerAdd)
+	} else {
+		fmt.Println("The address is illegal!")
+		os.Exit(0)
+	}
+}
+
+func (cli *CLI) resetUTXOSet(nodeID string) {
+
+	blockchain := BlockChainObject(nodeID)
+
+	defer blockchain.DB.Close()
+
+	utxoSet := &UTXOSet{blockchain}
+
+	utxoSet.ResetUTXOSet()
+
 }
