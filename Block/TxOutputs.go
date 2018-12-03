@@ -7,7 +7,7 @@ import (
 )
 
 type TxOutputs struct {
-	utxos []*UTXO
+	Utxos []*UTXO
 }
 
 // 将区块序列化成字节数组

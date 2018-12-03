@@ -185,13 +185,13 @@ func handleTx(request []byte, bc *BlockChain) {
 
 	tx := payload.Tx
 
-	memoryTxPool[hex.EncodeToString(tx.txHash)] = tx
+	memoryTxPool[hex.EncodeToString(tx.TxHash)] = tx
 
 	if nodeAddress == knowNodes[0] { //self
 		for _, nodeAddr := range knowNodes { //transfer miner
 
 			if nodeAddr != nodeAddress && nodeAddr != payload.AddrFrom {
-				sendInv(nodeAddr, TX_TYPE, [][]byte{tx.txHash})
+				sendInv(nodeAddr, TX_TYPE, [][]byte{tx.TxHash})
 			}
 
 		}

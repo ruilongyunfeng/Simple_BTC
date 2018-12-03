@@ -22,7 +22,7 @@ func (cli *CLI) createWallet(nodeID string) {
 
 	wallets.CreateNewWallet(nodeID)
 
-	fmt.Println(len(wallets.walletsMap))
+	fmt.Println(len(wallets.WalletsMap))
 }
 
 func (cli *CLI) createGenesisBlockchain(address string, nodeID string) {
@@ -39,7 +39,7 @@ func (cli *CLI) addressList(nodeID string) {
 
 	wallets, _ := NewWallets(nodeID)
 
-	for address, _ := range wallets.walletsMap {
+	for address := range wallets.WalletsMap {
 		fmt.Println(address)
 	}
 }

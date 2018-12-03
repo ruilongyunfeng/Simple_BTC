@@ -22,7 +22,7 @@ type CLI struct {
 
 func printUsage() {
 	fmt.Println("Usage:")
-	fmt.Println("\taddressLists -- 输出所有钱包地址.")
+	fmt.Println("\taddressList -- 输出所有钱包地址.")
 	fmt.Println("\tcreateWallet -- 创建钱包.")
 	fmt.Println("\tcreateBlockChain -address -- 交易数据.")
 	fmt.Println("\tsend -from FROM -to TO -amount AMOUNT -mine -- 交易明细.")
@@ -78,7 +78,7 @@ func (cli *CLI) Run() {
 	//blockChain suffix
 	flagCreateBlockChainAddress := createBlockChainCmd.String("address", "", "Genesis Address")
 	//getBalance suffix
-	flagGetBalanceAddress := getBalanceCmd.String("adddress", "", "query balance")
+	flagGetBalanceAddress := getBalanceCmd.String("address", "", "query balance")
 
 	switch os.Args[1] {
 
@@ -175,8 +175,8 @@ func (cli *CLI) Run() {
 		from := JsonToStringArray(*flagFrom)
 		to := JsonToStringArray(*flagTo)
 
-		for index, fromAdress := range from {
-			if IsValidForAdress([]byte(fromAdress)) == false || IsValidForAdress([]byte(to[index])) == false {
+		for index, fromAddress := range from {
+			if IsValidForAdress([]byte(fromAddress)) == false || IsValidForAdress([]byte(to[index])) == false {
 				fmt.Println("Address is illegal!")
 				printUsage()
 				os.Exit(1)

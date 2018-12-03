@@ -9,14 +9,14 @@ import (
 )
 
 type UTXOSet struct {
-	blockChain *BlockChain
+	BlockChain *BlockChain
 }
 
 const utxoTableName = "utxoTableName"
 
 //重置数据库
 func (ust *UTXOSet) ResetUTXOSet() {
-	err := ust.blockChain.DB.Update(func(tx *bolt.Tx) error {
+	err := ust.BlockChain.DB.Update(func(tx *bolt.Tx) error {
 
 		b := tx.Bucket([]byte(utxoTableName))
 
@@ -30,7 +30,7 @@ func (ust *UTXOSet) ResetUTXOSet() {
 		b, _ = tx.CreateBucket([]byte(utxoTableName))
 
 		if b != nil {
-			txOutputsMap := ust.blockChain.FindUTXOMap()
+			txOutputsMap := ust.BlockChain.FindUTXOMap()
 
 			for keyHash, outs := range txOutputsMap {
 				txHash, _ := hex.DecodeString(keyHash)
@@ -51,7 +51,7 @@ func (ust *UTXOSet) GetBalance(address string) int64 {
 	var amount int64
 
 	for _, utxo := range utxos {
-		amount += utxo.output.value
+		amount += utxo.Output.Value
 	}
 
 	return amount
@@ -60,7 +60,7 @@ func (ust *UTXOSet) GetBalance(address string) int64 {
 func (ust *UTXOSet) FindUTXOForAddress(address string) []*UTXO {
 	var utxos []*UTXO
 
-	ust.blockChain.DB.View(func(tx *bolt.Tx) error {
+	ust.BlockChain.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(utxoTableName))
 		if b != nil {
 			c := b.Cursor()
@@ -68,8 +68,8 @@ func (ust *UTXOSet) FindUTXOForAddress(address string) []*UTXO {
 			for k, v := c.First(); k != nil; k, v = c.Next() {
 				txOutputs := DeserializeTXOutputs(v)
 
-				for _, utxo := range txOutputs.utxos {
-					if utxo.output.UnLockScriptPubKeyWithAddress(address) {
+				for _, utxo := range txOutputs.Utxos {
+					if utxo.Output.UnLockScriptPubKeyWithAddress(address) {
 						utxos = append(utxos, utxo)
 					}
 				}
@@ -89,12 +89,12 @@ func (ust *UTXOSet) FindUnPackageSpendableUTXOS(from string, txs []*Transaction)
 
 	for _, tx := range txs {
 		if tx.IsCoinbaseTransaction() == false {
-			for _, vin := range tx.vins {
+			for _, vin := range tx.Vins {
 				pubKeyHash := Base58Decode([]byte(from))
 				ripemd160Hash := pubKeyHash[1 : len(pubKeyHash)-addressChecksumLen]
 				if vin.UnLockRipemd160Hash(ripemd160Hash) {
-					key := hex.EncodeToString(vin.txHash)
-					spentTxOutputs[key] = append(spentTxOutputs[key], vin.voutindex)
+					key := hex.EncodeToString(vin.TxHash)
+					spentTxOutputs[key] = append(spentTxOutputs[key], vin.Voutindex)
 				}
 			}
 		}
@@ -102,14 +102,14 @@ func (ust *UTXOSet) FindUnPackageSpendableUTXOS(from string, txs []*Transaction)
 
 	for _, tx := range txs {
 	work1:
-		for index, out := range tx.vouts {
+		for index, out := range tx.Vouts {
 			if out.UnLockScriptPubKeyWithAddress(from) {
 				if len(spentTxOutputs) == 0 {
-					utxo := &UTXO{tx.txHash, index, out}
+					utxo := &UTXO{tx.TxHash, index, out}
 					unUTXOs = append(unUTXOs, utxo)
 				} else {
 					for hash, indexArray := range spentTxOutputs {
-						txHash := hex.EncodeToString(tx.txHash)
+						txHash := hex.EncodeToString(tx.TxHash)
 
 						if hash == txHash {
 
@@ -117,11 +117,11 @@ func (ust *UTXOSet) FindUnPackageSpendableUTXOS(from string, txs []*Transaction)
 								if index == outIndex {
 									continue work1
 								}
-								utxo := &UTXO{tx.txHash, index, out}
+								utxo := &UTXO{tx.TxHash, index, out}
 								unUTXOs = append(unUTXOs, utxo)
 							}
 						} else {
-							utxo := &UTXO{tx.txHash, index, out}
+							utxo := &UTXO{tx.TxHash, index, out}
 							unUTXOs = append(unUTXOs, utxo)
 						}
 					}
@@ -141,16 +141,15 @@ func (ust *UTXOSet) FindSpendableUTXOS(from string, amount int64, txs []*Transac
 	var money int64 = 0
 
 	for _, UTXO := range unPackageUTXOS {
-		money += UTXO.output.value
-		txHash := hex.EncodeToString(UTXO.txHash)
-		spentableUTXO[txHash] = append(spentableUTXO[txHash], UTXO.index)
+		money += UTXO.Output.Value
+		txHash := hex.EncodeToString(UTXO.TxHash)
+		spentableUTXO[txHash] = append(spentableUTXO[txHash], UTXO.Index)
 		if money >= amount {
 			return money, spentableUTXO
 		}
 	}
 
-	//不够
-	ust.blockChain.DB.View(func(tx *bolt.Tx) error {
+	ust.BlockChain.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(utxoTableName))
 
 		if b != nil {
@@ -161,12 +160,12 @@ func (ust *UTXOSet) FindSpendableUTXOS(from string, amount int64, txs []*Transac
 			for k, v := c.First(); k != nil; k, v = c.Next() {
 				txOutputs := DeserializeTXOutputs(v)
 
-				for _, utxo := range txOutputs.utxos {
+				for _, utxo := range txOutputs.Utxos {
 
-					if utxo.output.UnLockScriptPubKeyWithAddress(from) {
-						money += utxo.output.value
-						txHash := hex.EncodeToString(utxo.txHash)
-						spentableUTXO[txHash] = append(spentableUTXO[txHash], utxo.index)
+					if utxo.Output.UnLockScriptPubKeyWithAddress(from) {
+						money += utxo.Output.Value
+						txHash := hex.EncodeToString(utxo.TxHash)
+						spentableUTXO[txHash] = append(spentableUTXO[txHash], utxo.Index)
 
 						if money >= amount {
 							break UTXOWK
@@ -188,7 +187,7 @@ func (ust *UTXOSet) FindSpendableUTXOS(from string, amount int64, txs []*Transac
 
 func (ust *UTXOSet) Update() {
 	// 最新的Block
-	block := ust.blockChain.Iterator().Next()
+	block := ust.BlockChain.Iterator().Next()
 
 	ins := []*TxInput{}
 
@@ -197,7 +196,7 @@ func (ust *UTXOSet) Update() {
 	// 找到所有我要删除的数据
 	for _, tx := range block.Txs {
 
-		for _, in := range tx.vins {
+		for _, in := range tx.Vins {
 			ins = append(ins, in)
 		}
 	}
@@ -206,13 +205,13 @@ func (ust *UTXOSet) Update() {
 
 		utxos := []*UTXO{}
 
-		for index, out := range tx.vouts {
+		for index, out := range tx.Vouts {
 
 			isSpent := false
 
 			for _, in := range ins {
 
-				if in.voutindex == index && bytes.Compare(tx.txHash, in.txHash) == 0 && bytes.Compare(out.ripemd160Hash, Ripemd160Hash(in.publicKey)) == 0 {
+				if in.Voutindex == index && bytes.Compare(tx.TxHash, in.TxHash) == 0 && bytes.Compare(out.Ripemd160Hash, Ripemd160Hash(in.PublicKey)) == 0 {
 
 					isSpent = true
 					continue
@@ -220,20 +219,20 @@ func (ust *UTXOSet) Update() {
 			}
 
 			if isSpent == false {
-				utxo := &UTXO{tx.txHash, index, out}
+				utxo := &UTXO{tx.TxHash, index, out}
 				utxos = append(utxos, utxo)
 			}
 
 		}
 
 		if len(utxos) > 0 {
-			txHash := hex.EncodeToString(tx.txHash)
+			txHash := hex.EncodeToString(tx.TxHash)
 			outsMap[txHash] = &TxOutputs{utxos}
 		}
 
 	}
 
-	err := ust.blockChain.DB.Update(func(tx *bolt.Tx) error {
+	err := ust.BlockChain.DB.Update(func(tx *bolt.Tx) error {
 
 		b := tx.Bucket([]byte(utxoTableName))
 
@@ -242,7 +241,7 @@ func (ust *UTXOSet) Update() {
 			// 删除
 			for _, in := range ins {
 
-				txOutputsBytes := b.Get(in.txHash)
+				txOutputsBytes := b.Get(in.TxHash)
 
 				if len(txOutputsBytes) == 0 {
 					continue
@@ -257,9 +256,9 @@ func (ust *UTXOSet) Update() {
 				// 判断是否需要
 				isNeedDelete := false
 
-				for _, utxo := range txOutputs.utxos {
+				for _, utxo := range txOutputs.Utxos {
 
-					if in.voutindex == utxo.index && bytes.Compare(utxo.output.ripemd160Hash, Ripemd160Hash(in.publicKey)) == 0 {
+					if in.Voutindex == utxo.Index && bytes.Compare(utxo.Output.Ripemd160Hash, Ripemd160Hash(in.PublicKey)) == 0 {
 
 						isNeedDelete = true
 					} else {
@@ -268,17 +267,17 @@ func (ust *UTXOSet) Update() {
 				}
 
 				if isNeedDelete {
-					b.Delete(in.txHash)
+					b.Delete(in.TxHash)
 					if len(UTXOS) > 0 {
 
-						preTXOutputs := outsMap[hex.EncodeToString(in.txHash)]
+						preTXOutputs := outsMap[hex.EncodeToString(in.TxHash)]
 
 						if preTXOutputs == nil {
 							preTXOutputs = new(TxOutputs)
 						}
-						preTXOutputs.utxos = append(preTXOutputs.utxos, UTXOS...)
+						preTXOutputs.Utxos = append(preTXOutputs.Utxos, UTXOS...)
 
-						outsMap[hex.EncodeToString(in.txHash)] = preTXOutputs
+						outsMap[hex.EncodeToString(in.TxHash)] = preTXOutputs
 
 					}
 				}

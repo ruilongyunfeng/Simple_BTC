@@ -23,7 +23,7 @@ func startServer(nodeID string, minerAdd string) {
 
 	minerAddress = minerAdd
 
-	ln, err := net.Listen(PROTOCOL, nodeID)
+	ln, err := net.Listen(PROTOCOL, nodeAddress)
 
 	if err != nil {
 		log.Panic(err)

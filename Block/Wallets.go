@@ -13,7 +13,7 @@ import (
 const walletFile = "Wallets_%s.dat"
 
 type Wallets struct {
-	walletsMap map[string]*Wallet
+	WalletsMap map[string]*Wallet
 }
 
 //创建钱包
@@ -23,7 +23,7 @@ func NewWallets(nodeID string) (*Wallets, error) {
 
 	if _, err := os.Stat(walletFile); os.IsNotExist(err) {
 		wallets := &Wallets{}
-		wallets.walletsMap = make(map[string]*Wallet)
+		wallets.WalletsMap = make(map[string]*Wallet)
 		return wallets, err
 	}
 
@@ -49,7 +49,7 @@ func (w *Wallets) CreateNewWallet(nodeID string) {
 
 	fmt.Printf("New Wallet Address: %s\n", wallet.GetAddress())
 
-	w.walletsMap[string(wallet.GetAddress())] = wallet
+	w.WalletsMap[string(wallet.GetAddress())] = wallet
 	w.SaveWallets(nodeID)
 }
 

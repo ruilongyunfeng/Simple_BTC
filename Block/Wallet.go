@@ -13,9 +13,9 @@ const version = byte(0x00)
 const addressChecksumLen = 4
 
 type Wallet struct {
-	privateKey ecdsa.PrivateKey
+	PrivateKey ecdsa.PrivateKey
 
-	publicKey []byte
+	PublicKey []byte
 }
 
 func IsValidForAdress(address []byte) bool {
@@ -27,14 +27,14 @@ func IsValidForAdress(address []byte) bool {
 
 	checkBytes := CheckSum(versionRipemd160)
 
-	if bytes.Compare(checkSumBytes,checkBytes)==0 {
+	if bytes.Compare(checkSumBytes, checkBytes) == 0 {
 		return true
 	}
 
 	return false
 }
 
-func CheckSum(payload []byte)[]byte{
+func CheckSum(payload []byte) []byte {
 
 	hash1 := sha256.Sum256(payload)
 	hash2 := sha256.Sum256(hash1[:])
@@ -42,36 +42,36 @@ func CheckSum(payload []byte)[]byte{
 	return hash2[:addressChecksumLen]
 }
 
-func (w *Wallet) GetAddress() []byte  {
+func (w *Wallet) GetAddress() []byte {
 
-	ripemd160Hash := Ripemd160Hash(w.publicKey)
+	ripemd160Hash := Ripemd160Hash(w.PublicKey)
 
-	versionRipemd160 := append([]byte{version},ripemd160Hash...)
+	versionRipemd160 := append([]byte{version}, ripemd160Hash...)
 
 	checkSumBytes := CheckSum(versionRipemd160)
 
-	resultBytes := append(versionRipemd160,checkSumBytes...)
+	resultBytes := append(versionRipemd160, checkSumBytes...)
 
-	return resultBytes
+	return Base58Encode(resultBytes)
 }
 
-func NewWallet() *Wallet{
-	privateKey,publicKey := newKeyPair()
+func NewWallet() *Wallet {
+	privateKey, publicKey := newKeyPair()
 
-	return &Wallet{privateKey,publicKey}
+	return &Wallet{privateKey, publicKey}
 }
 
-func newKeyPair() (ecdsa.PrivateKey,[]byte){
+func newKeyPair() (ecdsa.PrivateKey, []byte) {
 
 	curve := elliptic.P256()
 
-	priKey,err := ecdsa.GenerateKey(curve,rand.Reader)
+	priKey, err := ecdsa.GenerateKey(curve, rand.Reader)
 
-	if err != nil{
+	if err != nil {
 		log.Panic(err)
 	}
 
-	pubkey := append(priKey.PublicKey.X.Bytes(),priKey.PublicKey.Y.Bytes()...)
+	pubkey := append(priKey.PublicKey.X.Bytes(), priKey.PublicKey.Y.Bytes()...)
 
-	return *priKey,pubkey
+	return *priKey, pubkey
 }
