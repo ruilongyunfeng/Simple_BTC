@@ -42,7 +42,7 @@ func isValidArgs() {
 func (cli *CLI) Run() {
 	isValidArgs()
 
-	nodeID := os.Getenv("Node_ID")
+	nodeID := os.Getenv("NODE_ID")
 
 	if nodeID == "" {
 		fmt.Printf("NODE_ID env. var is not set!\n")
