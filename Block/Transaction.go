@@ -88,7 +88,9 @@ func (tx *Transaction) Hash() []byte {
 func NewSimpleTransaction(from string, to string, amount int64, utxoSet *UTXOSet, txs []*Transaction, nodeID string) *Transaction {
 	wallets, _ := NewWallets(nodeID)
 	wallet := wallets.WalletsMap[from]
-
+	if wallet == nil {
+		return nil
+	}
 	//查询余额
 	money, spendableUTXODic := utxoSet.FindSpendableUTXOS(from, amount, txs)
 

@@ -46,7 +46,7 @@ func sendVersion(toAddress string, bc *BlockChain) {
 
 func sendTx(toAddress string, tx *Transaction) {
 
-	payload := gobEncode(MessageTx{toAddress, tx})
+	payload := gobEncode(MessageTx{nodeAddress, tx})
 
 	request := append(commandToBytes(COMMAND_TX), payload...)
 
