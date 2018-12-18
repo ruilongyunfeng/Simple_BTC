@@ -35,6 +35,8 @@ func (bc *BlockChain) Iterator() *BlockchainIterator {
 }
 func CreateBlockchainWithGenesisBlock(address string, nodeID string) *BlockChain {
 
+	fmt.Println(address)
+	fmt.Println(nodeID)
 	dbName := fmt.Sprintf(dbName, nodeID)
 
 	if DBExists(dbName) {
@@ -123,7 +125,8 @@ func BlockChainObject(nodeID string) *BlockChain {
 
 	if DBExists(dbName) == false {
 		fmt.Println("DB is not exist!")
-		os.Exit(1)
+		//os.Exit(1)
+		return CreateBlockchainWithGenesisBlock(minerAddress, nodeID)
 	}
 
 	db, err := bolt.Open(dbName, 0600, nil)
@@ -461,6 +464,7 @@ func (bc *BlockChain) FindTransaction(txHash []byte, txs []*Transaction) (Transa
 }
 
 func (bc *BlockChain) VerifyTransaction(tx *Transaction, txs []*Transaction) bool {
+
 	prevTxs := make(map[string]Transaction)
 
 	for _, vin := range tx.Vins {
@@ -476,34 +480,33 @@ func (bc *BlockChain) VerifyTransaction(tx *Transaction, txs []*Transaction) boo
 	return tx.Verify(prevTxs)
 }
 
-
-func (bc *BlockChain) GetBalance(address string) int64{
-	utxos := bc.UnUTXOs(address,[]*Transaction{})
+func (bc *BlockChain) GetBalance(address string) int64 {
+	utxos := bc.UnUTXOs(address, []*Transaction{})
 
 	var amount int64
 
-	for _,utxo := range utxos {
+	for _, utxo := range utxos {
 		amount = amount + utxo.Output.Value
 	}
 
 	return amount
 }
 
-func (bc *BlockChain) GetBestHeight() int64{
+func (bc *BlockChain) GetBestHeight() int64 {
 	block := bc.Iterator().Next()
 
 	return block.Height
 }
 
-func (bc *BlockChain) GetBlockHahes() [][]byte  {
+func (bc *BlockChain) GetBlockHahes() [][]byte {
 	blockIterator := bc.Iterator()
 
 	var blockHashs [][]byte
 
-	for  {
+	for {
 		block := blockIterator.Next()
 
-		blockHashs = append(blockHashs,block.Hash)
+		blockHashs = append(blockHashs, block.Hash)
 
 		var hashInt big.Int
 		hashInt.SetBytes(block.PrevBlockHash)
@@ -516,7 +519,7 @@ func (bc *BlockChain) GetBlockHahes() [][]byte  {
 	return blockHashs
 }
 
-func (bc *BlockChain) GetBlock(blockHash []byte)([]byte,error){
+func (bc *BlockChain) GetBlock(blockHash []byte) ([]byte, error) {
 	var blockBytes []byte
 
 	err := bc.DB.View(func(tx *bolt.Tx) error {
@@ -529,10 +532,10 @@ func (bc *BlockChain) GetBlock(blockHash []byte)([]byte,error){
 		return nil
 	})
 
-	return blockBytes,err
+	return blockBytes, err
 }
 
-func (bc *BlockChain) AddBlock(block *Block){
+func (bc *BlockChain) AddBlock(block *Block) {
 	err := bc.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blockTableName))
 
@@ -543,7 +546,7 @@ func (bc *BlockChain) AddBlock(block *Block){
 				return nil
 			}
 
-			err := b.Put(block.Hash,block.Serialize())
+			err := b.Put(block.Hash, block.Serialize())
 
 			if err != nil {
 				log.Panic(err)
@@ -555,8 +558,8 @@ func (bc *BlockChain) AddBlock(block *Block){
 
 			blockInDB := DeSerializeBlock(blockBytes)
 
-			if blockInDB.Height < block.Height{
-				b.Put([]byte("tip"),block.Hash)
+			if blockInDB.Height < block.Height {
+				b.Put([]byte("tip"), block.Hash)
 				bc.tip = block.Hash
 			}
 		}
@@ -569,7 +572,7 @@ func (bc *BlockChain) AddBlock(block *Block){
 	}
 }
 
-func (bc *BlockChain) PrintChain()  {
+func (bc *BlockChain) PrintChain() {
 	fmt.Println("All BlockInfo:")
 
 	bcIterator := bc.Iterator()
@@ -584,27 +587,27 @@ func (bc *BlockChain) PrintChain()  {
 		fmt.Printf("Nonce：%d\n", block.Nonce)
 		fmt.Println("Txs:")
 
-		for _,tx := range block.Txs {
+		for _, tx := range block.Txs {
 			fmt.Printf("%x\n", tx.TxHash)
 			fmt.Println("Vins:")
 
-			for _,in := range tx.Vins{
+			for _, in := range tx.Vins {
 				fmt.Printf("%x\n", in.TxHash)
 				fmt.Printf("%d\n", in.Voutindex)
 				fmt.Printf("%x\n", in.PublicKey)
 			}
 
 			fmt.Println("Vouts:")
-			for _,out := range tx.Vouts{
-				fmt.Printf("%d\n",out.Value)
-				fmt.Printf("%x\n",out.Ripemd160Hash)
+			for _, out := range tx.Vouts {
+				fmt.Printf("%d\n", out.Value)
+				fmt.Printf("%x\n", out.Ripemd160Hash)
 			}
 		}
 
 		var hashInt big.Int
 		hashInt.SetBytes(block.PrevBlockHash)
 
-		if hashInt.Cmp(big.NewInt(0))== 0 {
+		if hashInt.Cmp(big.NewInt(0)) == 0 {
 			break
 		}
 	}

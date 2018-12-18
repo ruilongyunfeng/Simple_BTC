@@ -22,6 +22,7 @@ type CLI struct {
 
 func printUsage() {
 	fmt.Println("Usage:")
+	fmt.Println("\tresetNodeID -nodeId -- 重置nodeId.")
 	fmt.Println("\taddressList -- 输出所有钱包地址.")
 	fmt.Println("\tcreateWallet -- 创建钱包.")
 	fmt.Println("\tcreateBlockChain -address -- 交易数据.")
@@ -51,6 +52,8 @@ func (cli *CLI) Run() {
 
 	fmt.Printf("NODE_ID:%s\n", nodeID)
 
+	resetNodeIDCmd := flag.NewFlagSet("resetNodeID", flag.ExitOnError)
+
 	resetUTXOCmd := flag.NewFlagSet("resetUTXO", flag.ExitOnError)
 
 	createWalletCmd := flag.NewFlagSet("createWallet", flag.ExitOnError)
@@ -73,6 +76,7 @@ func (cli *CLI) Run() {
 	flagAmount := sendCmd.String("amount", "", "transfer amount")
 	flagMine := sendCmd.Bool("mine", false, "Mining Now")
 
+	nodeIDStr := resetNodeIDCmd.String("nodeId", "", "id of node")
 	//startNode suffix
 	flagMiner := startNodeCmd.String("miner", "", "Address of Miner")
 	//blockChain suffix
@@ -81,6 +85,12 @@ func (cli *CLI) Run() {
 	flagGetBalanceAddress := getBalanceCmd.String("address", "", "query balance")
 
 	switch os.Args[1] {
+
+	case "resetNodeID":
+		err := resetNodeIDCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Panic(err)
+		}
 
 	case "createWallet":
 		err := createWalletCmd.Parse(os.Args[2:])
@@ -133,6 +143,10 @@ func (cli *CLI) Run() {
 	default:
 		printUsage()
 		os.Exit(1)
+	}
+
+	if resetNodeIDCmd.Parsed() {
+		cli.startNode(*nodeIDStr, "")
 	}
 
 	if createWalletCmd.Parsed() {

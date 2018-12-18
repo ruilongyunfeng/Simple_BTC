@@ -21,7 +21,11 @@ func startServer(nodeID string, minerAdd string) {
 
 	nodeAddress = fmt.Sprintf("localhost:%s", nodeID)
 
-	minerAddress = minerAdd
+	if minerAdd == "" {
+		minerAddress = "1CcRr6KecoEAm1aTT8xCKhN5F9nRbBhuvg"
+	} else {
+		minerAddress = minerAdd
+	}
 
 	ln, err := net.Listen(PROTOCOL, nodeAddress)
 

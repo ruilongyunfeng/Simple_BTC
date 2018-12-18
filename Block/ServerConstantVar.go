@@ -11,7 +11,7 @@ package Block
  * *************************************************************/
 
 //存储节点全局变量
-var knowNodes = []string{"localhost:3000"}
+var knowNodes = []string{"localhost:8888"}
 var nodeAddress string //全局变量，节点地址
 // 存储hash值
 var hashCacheArray [][]byte

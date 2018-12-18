@@ -6,6 +6,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"fmt"
 	"log"
 )
 
@@ -20,7 +21,7 @@ type Wallet struct {
 
 func IsValidForAdress(address []byte) bool {
 	versionPublicKeyChecksumBytes := Base58Decode(address)
-
+	fmt.Println(versionPublicKeyChecksumBytes)
 	checkSumBytes := versionPublicKeyChecksumBytes[len(versionPublicKeyChecksumBytes)-addressChecksumLen:]
 
 	versionRipemd160 := versionPublicKeyChecksumBytes[:len(versionPublicKeyChecksumBytes)-addressChecksumLen]
