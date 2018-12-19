@@ -21,13 +21,13 @@ type Wallet struct {
 
 func IsValidForAdress(address []byte) bool {
 	versionPublicKeyChecksumBytes := Base58Decode(address)
-	fmt.Println(versionPublicKeyChecksumBytes)
+
 	checkSumBytes := versionPublicKeyChecksumBytes[len(versionPublicKeyChecksumBytes)-addressChecksumLen:]
-
+	//fmt.Println(checkSumBytes)
 	versionRipemd160 := versionPublicKeyChecksumBytes[:len(versionPublicKeyChecksumBytes)-addressChecksumLen]
-
+	fmt.Println()
 	checkBytes := CheckSum(versionRipemd160)
-
+	//fmt.Println(checkBytes)
 	if bytes.Compare(checkSumBytes, checkBytes) == 0 {
 		return true
 	}

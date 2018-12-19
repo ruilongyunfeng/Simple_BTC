@@ -10,7 +10,7 @@ import (
 	"os"
 )
 
-const walletFile = "Wallets_%s.dat"
+const walletFile = "Wallets.dat"
 
 type Wallets struct {
 	WalletsMap map[string]*Wallet
@@ -19,7 +19,7 @@ type Wallets struct {
 //创建钱包
 func NewWallets(nodeID string) (*Wallets, error) {
 
-	walletFile := fmt.Sprintf(walletFile, nodeID)
+	//walletFile := fmt.Sprintf(walletFile, nodeID)
 
 	if _, err := os.Stat(walletFile); os.IsNotExist(err) {
 		wallets := &Wallets{}
@@ -54,7 +54,7 @@ func (w *Wallets) CreateNewWallet(nodeID string) {
 }
 
 func (w *Wallets) SaveWallets(nodeID string) {
-	walletFile := fmt.Sprintf(walletFile, nodeID)
+	//walletFile := fmt.Sprintf(walletFile, nodeID)
 
 	var content bytes.Buffer
 
