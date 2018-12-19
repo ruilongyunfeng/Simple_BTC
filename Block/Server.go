@@ -34,7 +34,7 @@ func startServer(nodeID string, minerAdd string) {
 	}
 
 	defer ln.Close()
-
+	//TODO:Only one blockChain
 	bc := BlockChainObject(nodeID)
 
 	if nodeAddress != knowNodes[0] {
